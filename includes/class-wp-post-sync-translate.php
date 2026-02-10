@@ -78,6 +78,7 @@ class Wp_Post_Sync_Translate {
 		$this->set_locale();
 		$this->define_admin_hooks();
 		$this->define_public_hooks();
+		$this->define_core_hooks();
 
 	}
 
@@ -122,6 +123,18 @@ class Wp_Post_Sync_Translate {
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-wp-post-sync-translate-public.php';
 
+		/**
+		 * Core plugin functionality classes.
+		 */
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-database.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-settings.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-auth.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-mapper.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-logger.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-translator.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-rest.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-sync.php';
+
 		$this->loader = new Wp_Post_Sync_Translate_Loader();
 
 	}
@@ -156,6 +169,10 @@ class Wp_Post_Sync_Translate {
 
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
+		$this->loader->add_action( 'admin_menu', $plugin_admin, 'add_plugin_admin_menu' );
+		$this->loader->add_action( 'wp_ajax_wpst_save_settings', $plugin_admin, 'ajax_save_settings' );
+		$this->loader->add_action( 'wp_ajax_wpst_add_target', $plugin_admin, 'ajax_add_target' );
+		$this->loader->add_action( 'wp_ajax_wpst_remove_target', $plugin_admin, 'ajax_remove_target' );
 
 	}
 
@@ -173,6 +190,24 @@ class Wp_Post_Sync_Translate {
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_styles' );
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_scripts' );
 
+	}
+
+	/**
+	 * Register core plugin functionality hooks.
+	 *
+	 * @since 1.0.0
+	 * @access private
+	 */
+	private function define_core_hooks() {
+		// Register REST API endpoints.
+		add_action( 'rest_api_init', array( 'Wp_Post_Sync_Translate_REST', 'register_routes' ) );
+
+		// Register post sync hooks.
+		add_action( 'publish_post', array( 'Wp_Post_Sync_Translate_Sync', 'push_post' ), 10, 1 );
+		add_action( 'post_updated', function( $post_id ) {
+			Wp_Post_Sync_Translate_Sync::push_post( $post_id, 'update' );
+		}, 10, 1 );
+		add_action( 'delete_post', array( 'Wp_Post_Sync_Translate_Sync', 'delete_post' ), 10, 1 );
 	}
 
 	/**
