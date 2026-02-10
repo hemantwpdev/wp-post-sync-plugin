@@ -114,5 +114,87 @@ class Wp_Post_Sync_Translate_Admin {
 		require_once plugin_dir_path( __FILE__ ) . 'partials/wp-post-sync-translate-admin-display.php';
 	}
 
+	/**
+	 * Save settings via AJAX.
+	 *
+	 * @since 1.0.0
+	 */
+	public function ajax_save_settings() {
+		check_ajax_referer( 'wp-post-sync-translate', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( 'Insufficient permissions' );
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-settings.php';
+
+		$mode = isset( $_POST['mode'] ) ? sanitize_text_field( $_POST['mode'] ) : 'host';
+
+		Wp_Post_Sync_Translate_Settings::set_mode( $mode );
+
+		if ( 'target' === $mode ) {
+			$target_key = isset( $_POST['target_key'] ) ? sanitize_text_field( $_POST['target_key'] ) : '';
+			$language = isset( $_POST['language'] ) ? sanitize_text_field( $_POST['language'] ) : 'fr';
+			$chatgpt_key = isset( $_POST['chatgpt_key'] ) ? sanitize_text_field( $_POST['chatgpt_key'] ) : '';
+
+			Wp_Post_Sync_Translate_Settings::set_target_key( $target_key );
+			Wp_Post_Sync_Translate_Settings::set_target_language( $language );
+			Wp_Post_Sync_Translate_Settings::set_chatgpt_key( $chatgpt_key );
+		}
+
+		wp_send_json_success( 'Settings saved successfully' );
+	}
+
+	/**
+	 * Add target via AJAX.
+	 *
+	 * @since 1.0.0
+	 */
+	public function ajax_add_target() {
+		check_ajax_referer( 'wp-post-sync-translate', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( 'Insufficient permissions' );
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-settings.php';
+
+		$url = isset( $_POST['url'] ) ? esc_url_raw( $_POST['url'] ) : '';
+
+		if ( ! $url ) {
+			wp_send_json_error( 'Invalid URL' );
+		}
+
+		if ( Wp_Post_Sync_Translate_Settings::add_target( $url ) ) {
+			$target = Wp_Post_Sync_Translate_Settings::get_target( $url );
+			wp_send_json_success( $target );
+		} else {
+			wp_send_json_error( 'Failed to add target' );
+		}
+	}
+
+	/**
+	 * Remove target via AJAX.
+	 *
+	 * @since 1.0.0
+	 */
+	public function ajax_remove_target() {
+		check_ajax_referer( 'wp-post-sync-translate', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( 'Insufficient permissions' );
+		}
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-settings.php';
+
+		$url = isset( $_POST['url'] ) ? esc_url_raw( $_POST['url'] ) : '';
+
+		if ( Wp_Post_Sync_Translate_Settings::remove_target( $url ) ) {
+			wp_send_json_success( 'Target removed' );
+		} else {
+			wp_send_json_error( 'Failed to remove target' );
+		}
+	}
+
 
 }
