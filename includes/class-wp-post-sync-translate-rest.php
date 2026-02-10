@@ -158,50 +158,6 @@ class Wp_Post_Sync_Translate_REST {
 		// Check if this post already exists (by host_post_id and source URL).
 		$target_post_id = Wp_Post_Sync_Translate_Mapper::get_target_post_id( $host_post_id, $source_url );
 
-		// TRANSLATION DISABLED - TODO: Re-enable after post sync is working
-		/*
-		// Translate content.
-		$language   = Wp_Post_Sync_Translate_Settings::get_target_language();
-		$chatgpt_key = Wp_Post_Sync_Translate_Settings::get_chatgpt_key();
-
-		if ( $content && ! empty( $chatgpt_key ) ) {
-			$translator = new Wp_Post_Sync_Translate_Translator( $chatgpt_key );
-			$translation = $translator->translate( $content, $language );
-
-			if ( is_wp_error( $translation ) ) {
-				$logger->log_error(
-					$host_post_id,
-					$source_url,
-					'Translation error: ' . $translation->get_error_message(),
-					'sync',
-					$target_post_id
-				);
-				return $translation;
-			}
-
-			$content = $translation;
-		}
-
-		// Translate title and excerpt.
-		if ( $title && ! empty( $chatgpt_key ) ) {
-			$translator = new Wp_Post_Sync_Translate_Translator( $chatgpt_key );
-			$title_translation = $translator->translate( $title, $language );
-
-			if ( ! is_wp_error( $title_translation ) ) {
-				$title = $title_translation;
-			}
-		}
-
-		if ( $excerpt && ! empty( $chatgpt_key ) ) {
-			$translator = new Wp_Post_Sync_Translate_Translator( $chatgpt_key );
-			$excerpt_translation = $translator->translate( $excerpt, $language );
-
-			if ( ! is_wp_error( $excerpt_translation ) ) {
-				$excerpt = $excerpt_translation;
-			}
-		}
-		*/
-
 		// Create or update post.
 		$post_data = array(
 			'post_type'    => 'post',

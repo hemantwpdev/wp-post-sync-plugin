@@ -207,7 +207,6 @@ class Wp_Post_Sync_Translate {
 		add_action( 'post_updated', function( $post_id ) {
 			Wp_Post_Sync_Translate_Sync::push_post( $post_id, 'update' );
 		}, 10, 1 );
-		add_action( 'delete_post', array( 'Wp_Post_Sync_Translate_Sync', 'delete_post' ), 10, 1 );
 	}
 
 	/**
