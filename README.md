@@ -64,22 +64,26 @@ Automatically sync blog posts from Host site to Target sites in real-time using 
 - ✅ AJAX handlers for settings save/add/remove
 - ✅ Security validation & sanitization
 
-### ⏳ DISABLED (WILL RE-ENABLE)
+### ⏳ Pending
 - **Translation Feature and Post Generation Feature is remaining** - 
+
+Due to time constraints, the translation and target-side post creation features are still pending. While implementing the post receive flow on the Target site, issues were encountered when processing incoming post data, and these could not be fully resolved within the allotted time.
 
 ### ⚠️ KNOWN ISSUES & LIMITATIONS
 
 | Issue | Status | Details |
 |-------|--------|---------|
-| Post Generation and Sync Procedure | Pending | Getting Error During Sync Procedure, Testing is remaining with the website |
+| Post Generation and Sync Procedure | Pending | Getting Error During Sync Procedure, Bug Fixing is remaining |
 
 ---
 
 ## Screenshots
 
-https://prnt.sc/LxH6tlrfhzFK
-https://prnt.sc/2KW2DHDQpYdo
-https://prnt.sc/4pBOiHjYEPxh
+Host Settings Page: https://prnt.sc/LxH6tlrfhzFK
+
+Target Settings Page: https://prnt.sc/4pBOiHjYEPxh
+
+Logs Section: https://prnt.sc/2KW2DHDQpYdo
 
 
 ### Host Settings Page
@@ -114,6 +118,6 @@ Example: 2026-02-10 09:15:23 | sync | success | Host: 1845 | Target: 2301 | 1250
 
 ## Demo Video
 
-**[https://www.loom.com/share/648c0b1ba3c2462fb0985b1cff6c788c]**
+**https://www.loom.com/share/648c0b1ba3c2462fb0985b1cff6c788c**
 
 ---
