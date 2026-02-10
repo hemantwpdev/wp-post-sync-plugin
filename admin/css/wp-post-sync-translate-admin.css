@@ -2,3 +2,58 @@
  * All of the CSS for your admin-specific functionality should be
  * included in this file.
  */
+
+.wpst-container {
+	max-width: 900px;
+	margin: 20px 0;
+	background: white;
+	padding: 20px;
+	border-radius: 5px;
+}
+
+.wpst-container .form-table {
+	margin-top: 15px;
+}
+
+.wpst-container table.wp-list-table {
+	margin-bottom: 20px;
+}
+
+.status-success {
+	color: #0a8917;
+	font-weight: bold;
+}
+
+.status-error {
+	color: #d32f2f;
+	font-weight: bold;
+}
+
+.copy-key {
+	margin-left: 5px;
+	font-size: 11px;
+	padding: 2px 8px;
+	height: auto;
+}
+
+#add-target-message,
+#save-message {
+	display: inline-block;
+	padding: 5px 10px;
+	border-radius: 3px;
+	margin-left: 10px;
+}
+
+#add-target-message.error,
+#save-message.error {
+	background-color: #fee;
+	color: #d32f2f;
+	border: 1px solid #fcc;
+}
+
+#add-target-message.success,
+#save-message.success {
+	background-color: #efe;
+	color: #0a8917;
+	border: 1px solid #cfc;
+}
