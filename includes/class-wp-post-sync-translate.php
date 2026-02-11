@@ -133,6 +133,8 @@ class Wp_Post_Sync_Translate {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-logger.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-rest.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-sync.php';
+        // Translator (target-side background translation)
+        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-translator.php';
 
 		$this->loader = new Wp_Post_Sync_Translate_Loader();
 
@@ -202,7 +204,7 @@ class Wp_Post_Sync_Translate {
 		add_action( 'rest_api_init', array( 'Wp_Post_Sync_Translate_REST', 'register_routes' ) );
 
 		// Register post sync hooks.
-		add_action( 'publish_post', array( 'Wp_Post_Sync_Translate_Sync', 'push_post' ), 10, 1 );
+		add_action( 'wp_after_insert_post', array( 'Wp_Post_Sync_Translate_Sync', 'push_post' ), 10, 3 );
 		add_action( 'post_updated', function( $post_id ) {
 			Wp_Post_Sync_Translate_Sync::push_post( $post_id, 'update' );
 		}, 10, 1 );
