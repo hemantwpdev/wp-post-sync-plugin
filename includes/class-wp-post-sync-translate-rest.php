@@ -458,13 +458,13 @@ class Wp_Post_Sync_Translate_REST {
 		}
 
 		// Check if file already exists in media library.
-		// $existing_attachment_id = self::get_attachment_by_filename( $filename );
+		$existing_attachment_id = self::get_attachment_by_filename( $filename );
 
-		// if ( $existing_attachment_id ) {
-		// 	// Attachment already exists, just set it as featured image.
-		// 	set_post_thumbnail( $post_id, $existing_attachment_id );
-		// 	return;
-		// }
+		if ( $existing_attachment_id ) {
+			// Attachment already exists, just set it as featured image.
+			set_post_thumbnail( $post_id, $existing_attachment_id );
+			return;
+		}
 
 		// Download image.
 		$response = wp_remote_get(
