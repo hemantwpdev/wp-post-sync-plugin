@@ -62,26 +62,6 @@ class Wp_Post_Sync_Translate_REST {
 
 		register_rest_route(
 			self::REST_NAMESPACE,
-			'/auth-test',
-			array(
-				'methods'             => 'POST',
-				'callback'            => array( __CLASS__, 'handle_auth_test' ),
-				'permission_callback' => '__return_true',
-				'args'                => array(
-					'source_url' => array(
-						'type'     => 'string',
-						'required' => true,
-					),
-					'signature'  => array(
-						'type'     => 'string',
-						'required' => true,
-					),
-				),
-			)
-		);
-
-		register_rest_route(
-			self::REST_NAMESPACE,
 			'/translate',
 			array(
 				'methods'             => 'POST',
@@ -302,62 +282,6 @@ class Wp_Post_Sync_Translate_REST {
 				'success' => true,
 				'post_id' => $post_id,
 				'message' => 'Translation queued',
-			),
-			200
-		);
-	}
-
-	/**
-	 * Handle auth test endpoint.
-	 *
-	 * @param WP_REST_Request $request REST request.
-	 * @return WP_REST_Response|WP_Error Response.
-	 * @since 1.0.0
-	 */
-	public static function handle_auth_test( WP_REST_Request $request ) {
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-settings.php';
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-auth.php';
-
-		if ( Wp_Post_Sync_Translate_Settings::get_mode() !== 'target' ) {
-			return new WP_Error(
-				'not_target',
-				'This site is not configured as a target',
-				array( 'status' => 403 )
-			);
-		}
-
-		$params      = $request->get_json_params();
-		$stored_key  = Wp_Post_Sync_Translate_Settings::get_target_key();
-		$source_url  = esc_url_raw( $params['source_url'] ?? '' );
-		$signature   = sanitize_text_field( $params['signature'] ?? '' );
-
-		if ( empty( $stored_key ) ) {
-			return new WP_Error(
-				'no_key',
-				'Target key not configured',
-				array( 'status' => 403 )
-			);
-		}
-
-		// Remove signature from params before verification.
-		unset( $params['signature'] );
-
-		// Verify signature.
-		$auth_result = Wp_Post_Sync_Translate_Auth::verify_request(
-			$params,
-			$signature,
-			$source_url,
-			$stored_key
-		);
-
-		if ( is_wp_error( $auth_result ) ) {
-			return $auth_result;
-		}
-
-		return new WP_REST_Response(
-			array(
-				'success' => true,
-				'message' => 'Authentication successful',
 			),
 			200
 		);
