@@ -77,7 +77,7 @@ class Wp_Post_Sync_Translate_Admin {
 			return;
 		}
 
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/wp-post-sync-translate-admin.js', array( 'jquery' ), $this->version, false );
+		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/wp-post-sync-translate-admin.js', array( 'jquery' ), rand(0,999999), false );
 
 		// Localize script with nonce and AJAX URLs.
 		wp_localize_script(
@@ -136,6 +136,14 @@ class Wp_Post_Sync_Translate_Admin {
 			$target_key = isset( $_POST['target_key'] ) ? sanitize_text_field( $_POST['target_key'] ) : '';
 			$language = isset( $_POST['language'] ) ? sanitize_text_field( $_POST['language'] ) : 'fr';
 			$chatgpt_key = isset( $_POST['chatgpt_key'] ) ? sanitize_text_field( $_POST['chatgpt_key'] ) : '';
+
+			if ( empty( $target_key ) ) {
+				wp_send_json_error( 'Target key is required' );
+			}
+
+			if ( strlen( $target_key ) < 16 ) {
+				wp_send_json_error( 'Target key must be at least 16 characters long' );
+			}
 
 			Wp_Post_Sync_Translate_Settings::set_target_key( $target_key );
 			Wp_Post_Sync_Translate_Settings::set_target_language( $language );

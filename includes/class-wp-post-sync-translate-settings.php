@@ -204,14 +204,4 @@ class Wp_Post_Sync_Translate_Settings {
 		return bin2hex( random_bytes( 24 ) ); // 48 hex characters.
 	}
 
-	/**
-	 * Verify a key is valid.
-	 *
-	 * @param string $key Key to verify.
-	 * @return bool True if valid.
-	 * @since 1.0.0
-	 */
-	public static function is_valid_key( $key ) {
-		return strlen( $key ) >= 16 && preg_match( '/^[a-f0-9]+$/', $key );
-	}
 }

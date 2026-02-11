@@ -99,10 +99,21 @@
 				nonce: wpstTranslate.nonce,
 			};
 
+
 			if (mode === 'target') {
-				data.target_key = $('#target_key').val();
-				data.language = $('#language').val();
-				data.chatgpt_key = $('#chatgpt_key').val();
+				const targetKey = $('#target_key').val() ? $('#target_key').val().trim() : '';
+				if (!targetKey) {
+					message.text('Target key is required').removeClass('success').addClass('error');
+					return;
+				}
+				if (targetKey.length < 16) {
+					message.text('Target key must be at least 16 characters long').removeClass('success').addClass('error');
+					return;
+				}
+
+				data.target_key = targetKey;
+				data.language = $('#language').val() ? $('#language').val().trim() : '';
+				data.chatgpt_key = $('#chatgpt_key').val() ? $('#chatgpt_key').val().trim() : '';
 			}
 
 			$.ajax({
