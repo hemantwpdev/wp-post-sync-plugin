@@ -15,7 +15,18 @@ class Wp_Post_Sync_Translate_Sync {
 	 * @param string $action Action (publish, update, delete).
 	 * @since 1.0.0
 	 */
-	public static function push_post( $post_id, $action = 'publish' ) {
+	public static function push_post( $post_id, $post, $update = false ) {
+
+		if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
+			return;
+		}
+
+		if ( $post->post_type !== 'post' ) {
+			return;
+		}
+
+		$action = $update ? 'update' : 'publish';
+
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-settings.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-auth.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-logger.php';
@@ -100,8 +111,6 @@ class Wp_Post_Sync_Translate_Sync {
 
 		// Send request.
 		$endpoint = trailingslashit( $target_url ) . 'wp-json/wp-post-sync-translate/v1/sync';
-		error_log( 'Pushing post ID ' . $post_id . ' to ' . $endpoint . ' with action ' . $action );
-		error_log( 'Request body: ' . print_r( $body, true ) );
 		$response = wp_remote_post(
 			$endpoint,
 			array(
@@ -109,7 +118,7 @@ class Wp_Post_Sync_Translate_Sync {
 					'Content-Type' => 'application/json',
 				),
 				'body'      => wp_json_encode( $body ),
-				'timeout'   => 30,
+				'timeout'   => 300,
 				'sslverify' => true,
 			)
 		);
@@ -120,12 +129,10 @@ class Wp_Post_Sync_Translate_Sync {
 
 		if ( is_wp_error( $response ) ) {
 			$message = $response->get_error_message();
-			error_log( 'Error pushing to ' . $endpoint . ': ' . $message );
 		} else {
 			$http_code = wp_remote_retrieve_response_code( $response );
 			$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
-			error_log( 'HTTP code: ' . $http_code );
-			error_log( 'Response from ' . $endpoint . ': ' . print_r( $response_body, true ) );
+
 			if ( 200 === $http_code && isset( $response_body['success'] ) && $response_body['success'] ) {
 				$status = 'success';
 				$message = $response_body['message'] ?? 'Synced successfully';
@@ -136,7 +143,7 @@ class Wp_Post_Sync_Translate_Sync {
 
 		// Log.
 		if ( 'success' === $status ) {
-			$logger->log_success( $post_id, null, $target_url, $action );
+			$logger->log_success( $post_id, $response_body['target_post_id'], $target_url, $action );
 		} else {
 			$logger->log_error( $post_id, $target_url, $message, $action );
 		}
