@@ -65,6 +65,8 @@ class Wp_Post_Sync_Translate_Auth {
 		// Verify signature (primary security check).
 		// HMAC signature is sufficient - it binds the request body + key together.
 		// If signature is valid, we know request came from someone with the shared key.
+		unset( $body['signature'] );
+
 		if ( ! self::verify_signature( $body, $key, $signature ) ) {
 			return new WP_Error(
 				'invalid_signature',
