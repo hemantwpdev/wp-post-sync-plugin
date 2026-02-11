@@ -64,17 +64,6 @@ Automatically sync blog posts from Host site to Target sites in real-time using 
 - ✅ AJAX handlers for settings save/add/remove
 - ✅ Security validation & sanitization
 
-### ⏳ Pending
-- **Translation Feature and Post Generation Feature is remaining** - 
-
-Due to time constraints, the translation and target-side post creation features are still pending. While implementing the post receive flow on the Target site, issues were encountered when processing incoming post data, and these could not be fully resolved within the allotted time.
-
-### ⚠️ KNOWN ISSUES & LIMITATIONS
-
-| Issue | Status | Details |
-|-------|--------|---------|
-| Post Generation and Sync Procedure | Pending | Getting Error During Sync Procedure, Bug Fixing is remaining |
-
 ---
 
 ## Screenshots
@@ -119,5 +108,19 @@ Example: 2026-02-10 09:15:23 | sync | success | Host: 1845 | Target: 2301 | 1250
 ## Demo Video
 
 **https://www.loom.com/share/648c0b1ba3c2462fb0985b1cff6c788c**
+**https://www.loom.com/share/048d78b2bf1f4ed6853f8e57951f6837**
 
 ---
+
+### ⚠️
+- **Translation Feature and Post Generation Feature** - 
+
+When a post is created or updated on the host website, it is automatically pushed to the target websites.
+
+Based on the target site’s settings, the post is then translated automatically in the background. The translation process (title, content, and excerpt) may take 10–15 seconds, so please allow some time for it to complete.
+
+You can monitor the translation progress and status in the Sync Logs section on the target website.
+
+After the post is synced and translated, it is recommended to resave the post on the target website. Gutenberg may store older block data in the database, and resaving the post will refresh the content and resolve any spacing or formatting issues.
+
+Scren-shot: https://prnt.sc/2C8LvLCMXi5b
