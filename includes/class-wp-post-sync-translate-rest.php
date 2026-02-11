@@ -79,6 +79,22 @@ class Wp_Post_Sync_Translate_REST {
 				),
 			)
 		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/translate',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'handle_translate' ),
+				'permission_callback' => '__return_true',
+				'args'                => array(
+					'post_id' => array(
+						'type'     => 'integer',
+						'required' => true,
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -93,7 +109,6 @@ class Wp_Post_Sync_Translate_REST {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-auth.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-mapper.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-logger.php';
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-translator.php';
 
 		// Check if this is a target site.
 		if ( Wp_Post_Sync_Translate_Settings::get_mode() !== 'target' ) {
@@ -119,10 +134,14 @@ class Wp_Post_Sync_Translate_REST {
 			);
 		}
 
+		// Extract signature and remove from body before verification.
+		$signature = $params['signature'] ?? '';
+		unset( $params['signature'] );
+
 		// Verify authentication.
 		$auth_result = Wp_Post_Sync_Translate_Auth::verify_request(
 			$params,
-			$params['signature'] ?? '',
+			$signature,
 			$params['source_url'] ?? '',
 			$stored_key
 		);
@@ -136,7 +155,7 @@ class Wp_Post_Sync_Translate_REST {
 			);
 			return $auth_result;
 		}
-
+		
 		// Extract data.
 		$host_post_id       = intval( $params['host_post_id'] ?? 0 );
 		$title              = sanitize_text_field( $params['title'] ?? '' );
@@ -204,11 +223,85 @@ class Wp_Post_Sync_Translate_REST {
 		// Log success.
 		$logger->log_success( $host_post_id, $target_post_id, $source_url, 'sync' );
 
+		// Trigger async translation on target if ChatGPT key and language are configured.
+		$chatgpt_key = Wp_Post_Sync_Translate_Settings::get_chatgpt_key();
+		$target_lang = Wp_Post_Sync_Translate_Settings::get_target_language();
+		$allowed = array( 'fr', 'es', 'hi' );
+		if ( ! empty( $chatgpt_key ) && in_array( $target_lang, $allowed, true ) ) {
+			// Make async call to translation endpoint (non-blocking).
+			$translate_endpoint = trailingslashit( get_site_url() ) . 'wp-json/wp-post-sync-translate/v1/translate';
+			wp_remote_post(
+				$translate_endpoint,
+				array(
+					'headers'   => array(
+						'Content-Type' => 'application/json',
+					),
+					'body'      => wp_json_encode( array( 'post_id' => $target_post_id ) ),
+					'timeout'   => 0.01, // Minimal timeout to avoid blocking.
+					'blocking'  => false, // Non-blocking async call.
+					'sslverify' => true,
+				)
+			);
+		}
+
 		return new WP_REST_Response(
 			array(
 				'success'        => true,
 				'target_post_id' => $target_post_id,
 				'message'        => 'Post synced and translated successfully',
+			),
+			200
+		);
+	}
+
+	/**
+	 * Handle translate endpoint (async background translation).
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error Response.
+	 * @since 1.0.0
+	 */
+	public static function handle_translate( WP_REST_Request $request ) {
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-settings.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-post-sync-translate-translator.php';
+
+		// Check if this is a target site.
+		if ( Wp_Post_Sync_Translate_Settings::get_mode() !== 'target' ) {
+			return new WP_Error(
+				'not_target',
+				'This site is not configured as a target',
+				array( 'status' => 403 )
+			);
+		}
+
+		$params = $request->get_json_params();
+		$post_id = intval( $params['post_id'] ?? 0 );
+
+		if ( ! $post_id ) {
+			return new WP_Error(
+				'invalid_post',
+				'Post ID required',
+				array( 'status' => 400 )
+			);
+		}
+
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return new WP_Error(
+				'post_not_found',
+				'Post not found',
+				array( 'status' => 404 )
+			);
+		}
+
+		// Run translation (returns immediately, actual translation happens in background).
+		Wp_Post_Sync_Translate_Translator::translate_post( $post_id );
+
+		return new WP_REST_Response(
+			array(
+				'success' => true,
+				'post_id' => $post_id,
+				'message' => 'Translation queued',
 			),
 			200
 		);
@@ -245,6 +338,9 @@ class Wp_Post_Sync_Translate_REST {
 				array( 'status' => 403 )
 			);
 		}
+
+		// Remove signature from params before verification.
+		unset( $params['signature'] );
 
 		// Verify signature.
 		$auth_result = Wp_Post_Sync_Translate_Auth::verify_request(
@@ -351,13 +447,30 @@ class Wp_Post_Sync_Translate_REST {
 	 * @since 1.0.0
 	 */
 	private static function sync_featured_image( $post_id, $image_url ) {
-		// Download image.
+		// Sanitize image URL.
 		$image_url = esc_url_raw( $image_url );
 
+		// Get image filename from URL.
+		$filename = basename( $image_url );
+
+		if ( ! $filename ) {
+			$filename = 'featured-image-' . $post_id;
+		}
+
+		// Check if file already exists in media library.
+		// $existing_attachment_id = self::get_attachment_by_filename( $filename );
+
+		// if ( $existing_attachment_id ) {
+		// 	// Attachment already exists, just set it as featured image.
+		// 	set_post_thumbnail( $post_id, $existing_attachment_id );
+		// 	return;
+		// }
+
+		// Download image.
 		$response = wp_remote_get(
 			$image_url,
 			array(
-				'timeout'   => 30,
+				'timeout'   => 300,
 				'sslverify' => true,
 			)
 		);
@@ -370,13 +483,6 @@ class Wp_Post_Sync_Translate_REST {
 
 		if ( empty( $image_data ) ) {
 			return;
-		}
-
-		// Get image filename from URL.
-		$filename = basename( $image_url );
-
-		if ( ! $filename ) {
-			$filename = 'featured-image-' . $post_id;
 		}
 
 		// Upload to media library.
@@ -407,5 +513,32 @@ class Wp_Post_Sync_Translate_REST {
 
 		// Set as featured image.
 		set_post_thumbnail( $post_id, $attachment_id );
+	}
+
+	/**
+	 * Get attachment ID by filename.
+	 *
+	 * @param string $filename Filename to search for.
+	 * @return int|false Attachment ID or false if not found.
+	 * @since 1.0.0
+	 */
+	private static function get_attachment_by_filename( $filename ) {
+		// Remove extension for title comparison.
+		$title = preg_replace( '/\.[^.]+$/', '', $filename );
+
+		$args = array(
+			'post_type'      => 'attachment',
+			'posts_per_page' => 1,
+			's'              => $title,
+			'post_status'    => 'inherit',
+		);
+
+		$query = new WP_Query( $args );
+
+		if ( $query->have_posts() ) {
+			return $query->posts[0]->ID;
+		}
+
+		return false;
 	}
 }
