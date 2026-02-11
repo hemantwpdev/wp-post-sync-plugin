@@ -112,7 +112,6 @@ Example: 2026-02-10 09:15:23 | sync | success | Host: 1845 | Target: 2301 | 1250
 
 ---
 
-### ⚠️
 - **Translation Feature and Post Generation Feature** - 
 
 When a post is created or updated on the host website, it is automatically pushed to the target websites.
